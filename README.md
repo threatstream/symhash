@@ -2,10 +2,23 @@
 
 A tool to create symbol table hashes for Mach-O executables.
 
-# Installation #
+Author: Aaron Shelmire, Anomali Inc.
+
+# Installation
+
+```
+pip install symhash
 ```
 
-# Make sure you have Python and pip installed.
+OR to install from source
 
-cd <project directory>
+```
+# Make sure you have Python and pip installed.
 git clone https://github.com/threatstream/symhash.git
+cd symhash
+pip install .
+```
+
+# License
+
+symhash is covered under the GNU GPLv3 License.  See [LICENSE](LICENSE) for more info.
