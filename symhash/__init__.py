@@ -17,8 +17,8 @@ import logging
 from hashlib import md5
 log = logging.getLogger(__name__)
 
-def create_stub_hash(filename):
-    ''' create the stub hash '''
+def create_sym_hash(filename):
+    ''' create the sym hash '''
     with open(filename, 'rb') as f:
         filedata = open(filename, 'rb').read()
         f.close()

@@ -13,7 +13,7 @@
 # creates a list and hashes those
 
 import argparse
-from symhash import create_stub_hash
+from symhash import create_sym_hash
 
 def main():
     opt = argparse.ArgumentParser(description='SymHash: a program to create \
@@ -29,9 +29,9 @@ def main():
     options = opt.parse_args()
     f_name = options.file
 
-    s = create_stub_hash(f_name)
+    s = create_sym_hash(f_name)
     if options.verbose == True:
-        print 'StubHash: %s' % s
+        print 'SymHash: %s' % s
     else:
         print(s)
 
