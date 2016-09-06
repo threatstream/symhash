@@ -31,9 +31,11 @@ def main():
 
     s = create_sym_hash(f_name)
     if options.verbose == True:
-        print 'SymHash: %s' % s
+        for k,v in s.iteritems():
+            print 'SymHash for %s: %s' % (k, v)
     else:
-        print(s)
+        for k,v in s.iteritems():
+            print "%s: %s" % (k, v)
 
 if __name__ == '__main__':
     main()

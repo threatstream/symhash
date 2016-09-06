@@ -38,15 +38,24 @@ def create_sym_hash(filename):
     except MachOParserError, e:
         log.error("Error %s", e)
         return None
-    sym_list = []
+    sym_dict = {}
     for entity in macho_parser.entities:
-        for cmd in entity.cmdlist:
-            if cmd['cmd'] == MachOEntity.LC_SYMTAB:
-                for sym in cmd['symbols']:
-                    if not sym['is_stab']:
-                        if sym['n_type'] == '0x00':
-                            sym_list.append(sym.get('string', ''))
+        if entity.magic_str != 'Universal':
 
-    symhash = md5(','.join(sorted(sym_list))).hexdigest()
+            entity_string = '%s %s %s' % (
+                    entity.cpu_type_str,
+                    entity.filetype_str,
+                    entity.magic_str)
+            sym_list = []
+            for cmd in entity.cmdlist:
+                if cmd['cmd'] == MachOEntity.LC_SYMTAB:
+                    for sym in cmd['symbols']:
+                        if not sym['is_stab']:
+                            if sym['external'] is True:
+                                if sym['n_type'] == '0x00':
+                                    sym_list.append(sym.get('string', ''))
 
-    return symhash
+            symhash = md5(','.join(sorted(sym_list))).hexdigest()
+            sym_dict[entity_string] = symhash
+
+    return sym_dict
