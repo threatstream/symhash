@@ -21,4 +21,4 @@ pip install .
 
 # License
 
-symhash is covered under the GNU GPLv3 License.  See [LICENSE](LICENSE) for more info.
+symhash is covered under the MIT License.  See [LICENSE](LICENSE) for more info.
