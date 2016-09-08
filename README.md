@@ -1,5 +1,5 @@
-# symhash #
-A tool to create symbol table hashes for Mach-O executables. 
+# symhash
+A tool to create symbol table hashes for Mach-O executables (i.e. [imphash](https://www.fireeye.com/blog/threat-research/2014/01/tracking-malware-import-hashing.html) for MacOS binaries).
 
 This is a python library that can either be used in your python script or used at a command line in shell scripts.
 
@@ -32,19 +32,15 @@ pip install .
 
 # Example Use at Command Line (using file in bin)
 ```
-./symhash.py -f filename -v
+./symhash -f filename -v
 ```
 
 # Example Use in Python Script
-```python
-#search through the components in the binary to find 
-for cmd in entity.cmdlist:
-	if cmd['cmd'] == MachOEntity.LC_SYMTAB:
-		for sym in cmd['symbols']:
-			if not sym['is_stab']:
-				if sym['external'] is True:
-					sym_list.append(sym.get('string',''))
-symhash = md5(','.join(sorted(sym_list))).hexdigest()
+```
+from symhash import create_sym_hash
+s_hash = create_sym_hash(filename)
+# s_hash is a dict with a key and value for each embedded binary (usually one per architecture)
+print s_hash
 ```
 
 # License
