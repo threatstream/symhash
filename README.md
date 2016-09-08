@@ -32,15 +32,18 @@ pip install .
 
 # Example Use at Command Line (using file in bin)
 ```
-./symhash -f filename -v
+$ symhash -f "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+Intel (64-bit) Executable 64-bit: ffa85e12c2d826723412ebd1d91cbf1f
 ```
 
 # Example Use in Python Script
 ```
-from symhash import create_sym_hash
-s_hash = create_sym_hash(filename)
-# s_hash is a dict with a key and value for each embedded binary (usually one per architecture)
-print s_hash
+In [1]: from symhash import create_sym_hash
+
+In [2]: s_hash = create_sym_hash("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
+
+In [3]: print s_hash
+{'Intel (64-bit) Executable 64-bit': 'ffa85e12c2d826723412ebd1d91cbf1f'}
 ```
 
 # License
