@@ -38,12 +38,11 @@ Intel (64-bit) Executable 64-bit: ffa85e12c2d826723412ebd1d91cbf1f
 
 # Example Use in Python Script
 ```
-In [1]: from symhash import create_sym_hash
-
-In [2]: s_hash = create_sym_hash("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
-
-In [3]: print s_hash
-{'Intel (64-bit) Executable 64-bit': 'ffa85e12c2d826723412ebd1d91cbf1f'}
+from symhash import create_sym_hash
+s_hash = create_sym_hash("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
+print s_hash
+# Results in output like this:
+# {'Intel (64-bit) Executable 64-bit': 'ffa85e12c2d826723412ebd1d91cbf1f'}
 ```
 
 # License
