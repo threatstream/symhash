@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+#
+# Mach-O symbol table hasher
+#
+# This is a Mach-O version of imphash
+#
+# imphash walks the import table
+# creates a list of strings of form:
+#   ('%s.%s', libname.lower(), funcname.lower())
+#
+# symhash walks the symbol table (read: loaded API calls)
+# creates a list and hashes those
+
+import argparse
+from symhash import create_sym_hash
+
+def main():
+    opt = argparse.ArgumentParser(description='SymHash: a program to create \
+        symbol table hashes and compare Mach-O executable similarity')
+    opt.add_argument(
+        '-f', '--file', help='The file to create a SymHash from', required=True
+        )
+    opt.add_argument(
+        '-v', '--verbose', help='Verbose output', required=False,
+        action='store_true'
+        )
+
+    options = opt.parse_args()
+    f_name = options.file
+
+    s = create_sym_hash(f_name)
+    if options.verbose == True:
+        for k,v in s.iteritems():
+            print 'SymHash for %s: %s' % (k, v)
+    else:
+        for k,v in s.iteritems():
+            print "%s: %s" % (k, v)
+
+if __name__ == '__main__':
+    main()
