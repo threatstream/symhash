@@ -13,29 +13,32 @@
 # creates a list and hashes those
 
 import argparse
+
+from future.utils import iteritems
 from symhash import create_sym_hash
+
 
 def main():
     opt = argparse.ArgumentParser(description='SymHash: a program to create \
         symbol table hashes and compare Mach-O executable similarity')
     opt.add_argument(
         '-f', '--file', help='The file to create a SymHash from', required=True
-        )
+    )
     opt.add_argument(
         '-v', '--verbose', help='Verbose output', required=False,
         action='store_true'
-        )
+    )
 
     options = opt.parse_args()
     f_name = options.file
 
     s = create_sym_hash(f_name)
-    if options.verbose == True:
-        for k,v in s.iteritems():
-            print 'SymHash for %s: %s' % (k, v)
+    if options.verbose:
+        for k, v in iteritems(s):
+            print("SymHash for {}: {}".format(k, v))
     else:
-        for k,v in s.iteritems():
-            print "%s: %s" % (k, v)
+        for k, v in iteritems(s):
+            print("{}: {}".format(k, v))
 
 if __name__ == '__main__':
     main()
