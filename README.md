@@ -1,7 +1,7 @@
 # symhash
 A tool to create symbol table hashes for Mach-O executables (i.e. [imphash](https://www.fireeye.com/blog/threat-research/2014/01/tracking-malware-import-hashing.html) for MacOS binaries).
 
-This is a python library that can either be used in your python script or used at a command line in shell scripts. It leverages the "machoinfo" library from Mitre's [CRITS](https://github.com/crits/). 
+This is a python library that can either be used in your python script or used at a command line in shell scripts. It leverages the "machoinfo" library from Mitre's [CRITS](https://github.com/crits/).
 
 These hashes can be used to compare OSX binaries and find similar matches. The oldest and most common technique for malware detection is still an exact match of a file hash. Exact match methods have been obsolete for several years due to morphing malware and differences in embedded configurations from kits. By finding similar binaries you can detect famlilies.
 
@@ -40,7 +40,7 @@ Intel (64-bit) Executable 64-bit: ffa85e12c2d826723412ebd1d91cbf1f
 ```
 from symhash import create_sym_hash
 s_hash = create_sym_hash("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
-print s_hash
+print(s_hash)
 # Results in output like this:
 # {'Intel (64-bit) Executable 64-bit': 'ffa85e12c2d826723412ebd1d91cbf1f'}
 ```
