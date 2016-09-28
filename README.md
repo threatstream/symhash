@@ -30,19 +30,29 @@ cd symhash
 pip install .
 ```
 
-# Example Use at Command Line (using file in bin)
+# Example Use #1 - Command Line (using file in bin)
 ```
 $ symhash -f "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 Intel (64-bit) Executable 64-bit: ffa85e12c2d826723412ebd1d91cbf1f
 ```
 
-# Example Use in Python Script
+# Example Use #2 - Python script, File on disk
 ```
-from symhash import create_sym_hash
-s_hash = create_sym_hash("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
-print(s_hash)
-# Results in output like this:
-# {'Intel (64-bit) Executable 64-bit': 'ffa85e12c2d826723412ebd1d91cbf1f'}
+>>> from symhash import create_sym_hash
+>>> s_hash = create_sym_hash("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
+>>> s_hash
+{'Intel (64-bit) Executable 64-bit': 'ffa85e12c2d826723412ebd1d91cbf1f'}
+>>>
+```
+
+# Example Use #2 - Python script, Buffered data
+```
+>>> f = open("/vagrant/chrome", "rb").read()
+>>> from symhash import create_sym_hash
+>>> s_hash = create_sym_hash(data=f)
+>>> s_hash
+{'Intel (64-bit) Executable 64-bit': 'ffa85e12c2d826723412ebd1d91cbf1f'}
+>>>
 ```
 
 # License

@@ -13,37 +13,34 @@
 # creates a list and hashes those
 
 import magic
-import logging
 from hashlib import md5
 
-log = logging.getLogger(__name__)
-
-try:
-    from symhash.machoinfo import MachOEntity, MachOParser, MachOParserError
-except:
-    log.error("machoinfo is required - if installation did not work, retreive"
-              "machoinfo.py from https://raw.githubusercontent.com/crits/crits_services/master/machoinfo_service/machoinfo.py")
-    exit(-1)
+from symhash.machoinfo import MachOEntity, MachOParser, MachOParserError
 
 
-def create_sym_hash(filename):
+def create_sym_hash(filename=None, data=None):
     # create the sym hash
-    with open(filename, 'rb') as f:
-        filedata = f.read()
+    if filename:
+        with open(filename, 'rb') as f:
+            data = f.read()
+
+    if not data:
+        return
 
     with magic.Magic() as m:
-        filetype = m.id_filename(filename)
+        filetype = m.id_buffer(data[0:1000])
 
     if 'Mach-O' not in filetype:
-        log.error("symhash only operates on Mach-O Executable files")
+        print("Data provided is not a valid Mach-O filetype")
+        return
 
-    macho_parser = MachOParser(filedata)
+    macho_parser = MachOParser(data)
 
     try:
         macho_parser.parse()
     except MachOParserError as e:
-        log.error("Error %s", e)
-        return None
+        print("Error {}".format(e))
+        return
 
     sym_dict = {}
 

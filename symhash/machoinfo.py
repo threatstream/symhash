@@ -1059,7 +1059,7 @@ class MachOEntity(object):
         for i in range(self.ncmds):
             (cmd, size) = struct.unpack(self.endian + 'II', data[cmd_offset:cmd_offset + self.LC_SZ])
             # The parsers don't want the 8 bytes we just parsed.
-            cmd_data = bytes(data[cmd_offset + self.LC_SZ:cmd_offset + size])
+            cmd_data = data[cmd_offset + self.LC_SZ:cmd_offset + size]
             cmd_parser = self.cmd_parsers.get(cmd, self.unknown_cmd)
             cmd_dict = cmd_parser(cmd_data)
             cmd_dict['cmd'] = cmd

@@ -33,6 +33,10 @@ def main():
     f_name = options.file
 
     s = create_sym_hash(f_name)
+
+    if not s:
+        return
+
     if options.verbose:
         for k, v in iteritems(s):
             print("SymHash for {}: {}".format(k, v))
