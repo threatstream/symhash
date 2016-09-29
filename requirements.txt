@@ -1,1 +1,2 @@
 filemagic==1.6
+future==0.15.2

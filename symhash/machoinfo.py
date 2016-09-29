@@ -41,11 +41,16 @@
 
 import struct
 import binascii
+
 from hashlib import md5
+from builtins import range
 from datetime import datetime
+from future.utils import iteritems
+
 
 class MachOParserError(Exception):
     pass
+
 
 class MachOEntity(object):
     # Magic values
@@ -623,7 +628,7 @@ class MachOEntity(object):
         # Given the internal 'flagval' from a header, return a list
         # of the corresponding flag names.
         flaglist = []
-        for (k, v) in self.flags.iteritems():
+        for (k, v) in iteritems(self.flags):
             if self.flagval & k == k:
                 flaglist.append(v)
         return flaglist
@@ -649,7 +654,7 @@ class MachOEntity(object):
         # Segment name is a NULL terminated string, at most 16 bytes long.
         # Make sure there is a NULL somewhere in the first 16 bytes else
         # take the entire thing.
-        null = cmd_data[:16].find('\x00')
+        null = cmd_data[:16].find(b'\x00')
         if null == -1:
             null = 16
         ret['segname'] = cmd_data[:null]
@@ -658,10 +663,10 @@ class MachOEntity(object):
         # Sections come after the command.
         sect_ptr = cmd_data[48:]
         ret['sectlist'] = []
-        for i in xrange(ret['nsects']):
+        for i in range(ret['nsects']):
             sect = {}
             # XXX: Ensure nsects * sizeof(struct section) is not off the end.
-            null = sect_ptr[:16].find('\x00')
+            null = sect_ptr[:16].find(b'\x00')
             if null == -1:
                 null = 16
             sect['sectname'] = sect_ptr[:null]
@@ -672,7 +677,7 @@ class MachOEntity(object):
             # 24 bits are for attributes, 8 bits are for type.
             sect['type'] = self.section_types.get(flags & 0xFF, "0x%08x" % flags)
             sect['flaglist'] = []
-            for (attr, desc) in self.section_attrs.items():
+            for (attr, desc) in iteritems(self.section_attrs):
                 if flags & attr == attr:
                     sect['flaglist'].append(desc)
             ret['sectlist'].append(sect)
@@ -706,7 +711,7 @@ class MachOEntity(object):
         ret['cpv'] = "%i.%i.%i" % ((cpv >> 16), (cpv >> 8) & 0xFF, cpv & 0xFF)
         # XXX: Ensure offset is not past the end...
         # Jump forward to the string and grab it.
-        null = cmd_data[offset:].find('\x00')
+        null = cmd_data[offset:].find(b'\x00')
         if null == -1:
             ret['dylib'] = 'Unknown'
         ret['dylib'] = cmd_data[offset:offset + null]
@@ -723,7 +728,7 @@ class MachOEntity(object):
         # The first 4 bytes are an offset to the start of the string. It's
         # the only thing in this structure, so just skip the first 4 bytes
         # and grab the rest until the null.
-        null = cmd_data[4:].find('\x00')
+        null = cmd_data[4:].find(b'\x00')
         if null == -1:
             ret['dylib'] = 'Unknown'
         ret['dylinker'] = cmd_data[4:4 + null]
@@ -767,7 +772,7 @@ class MachOEntity(object):
         # Segment name is a NULL terminated string, at most 16 bytes long.
         # Make sure there is a NULL somewhere in the first 16 bytes else
         # take the entire thing.
-        null = cmd_data[:16].find('\x00')
+        null = cmd_data[:16].find(b'\x00')
         if null == -1:
             null = 16
         ret['segname'] = cmd_data[:null]
@@ -776,10 +781,10 @@ class MachOEntity(object):
         # Sections come after the command.
         sect_ptr = cmd_data[64:]
         ret['sectlist'] = []
-        for i in xrange(ret['nsects']):
+        for i in range(ret['nsects']):
             sect = {}
             # XXX: Ensure nsects * sizeof(struct section_64) is not off the end.
-            null = sect_ptr[:16].find('\x00')
+            null = sect_ptr[:16].find(b'\x00')
             if null == -1:
                 null = 16
             sect['sectname'] = sect_ptr[:null]
@@ -790,7 +795,7 @@ class MachOEntity(object):
             # 24 bits are for attributes, 8 bits are for type.
             sect['type'] = self.section_types.get(flags & 0xFF, "0x%08x" % flags)
             sect['flaglist'] = []
-            for (attr, desc) in self.section_attrs.items():
+            for (attr, desc) in iteritems(self.section_attrs):
                 if flags & attr == attr:
                     sect['flaglist'].append(desc)
             ret['sectlist'].append(sect)
@@ -848,7 +853,7 @@ class MachOEntity(object):
         (length, count) = struct.unpack('>II', sig_data[4:12])
         ptr = sig_data[12:]
         ret = [] # A list of dictionaries returned by sub-parsers.
-        for i in xrange(count):
+        for i in range(count):
             (type_, offset) = struct.unpack('>II', ptr[:8])
             if (offset) > len(sig_data):
                 raise MachOParserError("Embedded signature overflow.")
@@ -872,7 +877,7 @@ class MachOEntity(object):
         ret['hashtype'] = self.hashes.get(ht, '0x%02x' % ht)
         ret['hash'] = binascii.hexlify(sig_data[ho:ho + hs])
         # Identifier is null terminated.
-        null = sig_data[io:].find('\x00')
+        null = sig_data[io:].find(b'\x00')
         if null == -1:
             ret['identifier'] = 'Unknown'
         else:
@@ -893,7 +898,7 @@ class MachOEntity(object):
         # Requirement sets are stored like super blobs.
         ptr = sig_data[12:]
         ret['requirements'] = []
-        for i in xrange(count):
+        for i in range(count):
             # Skipping over the first 4 bytes, I don't know what they are.
             # I think they are a type?
             offset = struct.unpack('>I', ptr[4:8])[0]
@@ -956,7 +961,7 @@ class MachOEntity(object):
 
         # XXX: Ensure sym_off + sizeof(struct nlist) is valid
         ptr = data[sym_off:]
-        for i in xrange(nsyms):
+        for i in range(nsyms):
             sym = {}
 
             # n_desc is unsigned for 64-bit files and signed for 32-bit. Weird.
@@ -975,7 +980,7 @@ class MachOEntity(object):
                 # XXX: Ensure that str_off + n_strx is valid
                 # n_strx is an offset into the string table starting at
                 # str_off. The strings are null terminated.
-                null = str_tab[n_strx:].find('\x00')
+                null = str_tab[n_strx:].find(b'\x00')
                 if null == 0 or null == -1:
                     ptr = ptr[nlist_size:]
                     continue
@@ -1051,7 +1056,7 @@ class MachOEntity(object):
         if (cmd_offset + (self.ncmds * self.LC_SZ)) > len(data):
             raise MachOParserError("Load commands too large.")
         # Loop through all the commands.
-        for i in xrange(self.ncmds):
+        for i in range(self.ncmds):
             (cmd, size) = struct.unpack(self.endian + 'II', data[cmd_offset:cmd_offset + self.LC_SZ])
             # The parsers don't want the 8 bytes we just parsed.
             cmd_data = data[cmd_offset + self.LC_SZ:cmd_offset + size]
@@ -1108,7 +1113,7 @@ class MachOParser(object):
         if entity.is_universal():
             self.entities.append(entity)
             ptr = self.data[self.FAT_SZ:]
-            for i in xrange(entity.nfat):
+            for i in range(entity.nfat):
                 # Grab the offset and size from each fat_arch.
                 (offset, size) = struct.unpack(entity.endian + 'II', ptr[8:16])
                 if (offset + size) > len(self.data):
