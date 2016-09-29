@@ -45,7 +45,7 @@ Intel (64-bit) Executable 64-bit: ffa85e12c2d826723412ebd1d91cbf1f
 >>>
 ```
 
-# Example Use #2 - Python script, Buffered data
+# Example Use #3 - Python script, Buffered data
 ```
 >>> f = open("/vagrant/chrome", "rb").read()
 >>> from symhash import create_sym_hash
