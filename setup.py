@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='symhash',
-    version='0.0.2',
+    version='0.0.3',
     url='https://github.com/threatstream/symhash',
     author='Aaron Shelmire',
     author_email='aaron.shelmire@anomali.com',
@@ -16,8 +16,9 @@ setup(
         'bin/symhash'
     ],
     install_requires=[
-        'filemagic==1.6',
-        'future==0.15.2',
+        'python-magic>=0.4.27',
+        'python-magic-bin>=0.4.14',
+        'future>=0.18.2',
     ],
     description='Anomali Symhash',
     classifiers=[

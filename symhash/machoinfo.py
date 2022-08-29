@@ -39,12 +39,12 @@
 # XXX: There are a lot of comments indicating we should check we aren't
 # parsing past the end of a slice. These should all be fixed. ;)
 
-import struct
 import binascii
-
-from hashlib import md5
+import struct
 from builtins import range
 from datetime import datetime
+from hashlib import md5
+
 from future.utils import iteritems
 
 
@@ -63,11 +63,14 @@ class MachOEntity(object):
 
     # CPU Types (not complete)
     CPU_ARCH_ABI64     = 0x01000000
+    CPU_ARCH_ABI64_32  = 0x02000000
     CPU_TYPE_POWERPC   = 0x00000012
     CPU_TYPE_X86       = 0x00000007
     CPU_TYPE_ARM       = 0x0000000C
     CPU_TYPE_POWERPC64 = CPU_TYPE_POWERPC | CPU_ARCH_ABI64
     CPU_TYPE_X86_64    = CPU_TYPE_X86 | CPU_ARCH_ABI64
+    CPU_TYPE_ARM64     = CPU_TYPE_ARM | CPU_ARCH_ABI64
+    CPU_TYPE_ARM64_32  = CPU_TYPE_ARM | CPU_ARCH_ABI64_32
 
     # CPU Subtypes (not complete)
     CPU_SUBTYPE_MASK         = 0xFF000000
@@ -83,6 +86,11 @@ class MachOEntity(object):
     CPU_SUBTYPE_ARM_V7       = 0x00000009
     CPU_SUBTYPE_ARM_V7F      = 0x0000000A
     CPU_SUBTYPE_ARM_V7K      = 0x0000000C
+    CPU_SUBTYPE_ARM64_ALL    = 0x00000000
+    CPU_SUBTYPE_ARM64_V8     = 0x00000001
+    CPU_SUBTYPE_ARM64E       = 0x00000002
+    CPU_SUBTYPE_ARM64_32_ALL = 0x00000000
+    CPU_SUBTYPE_ARM64_32_V8  = 0x00000001
 
     # Filetype
     MH_OBJECT      = 0x00000001
@@ -312,7 +320,8 @@ class MachOEntity(object):
                            self.CPU_TYPE_X86:       'Intel',
                            self.CPU_TYPE_POWERPC64: 'PPC64',
                            self.CPU_TYPE_X86_64:    'Intel (64-bit)',
-                           self.CPU_TYPE_ARM:       'ARM'
+                           self.CPU_TYPE_ARM:       'ARM',
+                           self.CPU_TYPE_ARM64:     'ARM64'
                          }
 
         # CPU subtype mapping
@@ -614,7 +623,7 @@ class MachOEntity(object):
             return self.cpu_ppc_subtypes.get(self.cpu_subtype & ~self.CPU_SUBTYPE_MASK, "0x%08x" % self.cpu_subtype)
         elif self.cpu_type in [self.CPU_TYPE_X86, self.CPU_TYPE_X86_64]:
             return self.cpu_x86_subtypes.get(self.cpu_subtype & ~self.CPU_SUBTYPE_MASK, "0x%08x" % self.cpu_subtype)
-        elif self.cpu_type in [self.CPU_TYPE_ARM]:
+        elif self.cpu_type in [self.CPU_TYPE_ARM, self.CPU_TYPE_ARM64]:
             return self.cpu_arm_subtypes.get(self.cpu_subtype & ~self.CPU_SUBTYPE_MASK, "0x%08x" % self.cpu_subtype)
         else:
             return "0x%08x" % self.cpu_subtype
@@ -1016,6 +1025,10 @@ class MachOEntity(object):
                     sym['external'] = True
                 else:
                     sym['external'] = False
+
+                sym['n_sect'] = n_sect
+                sym['n_desc'] = n_desc
+                sym['n_value'] = n_value
 
             symbols.append(sym)
             ptr = ptr[nlist_size:]
