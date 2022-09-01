@@ -19,6 +19,7 @@ setup(
         'python-magic>=0.4.27',
         'python-magic-bin>=0.4.14',
         'future>=0.18.2',
+        'ssdeep>=3.4',
     ],
     description='Anomali Symhash',
     classifiers=[

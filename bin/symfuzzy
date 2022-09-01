@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+
+#
+# Fussy hashing for Mach-O symbol table
+# This program is inspired by impfuzzy (https://github.com/JPCERTCC/impfuzzy)
+#
+# Copyright (C) 2022 Minoru Kobayashi <unknownbit@gmail.com> (@unkn0wnbit)
+#
+# This software is released under the MIT License.
+# https://opensource.org/licenses/MIT
+#
+
+import argparse
+import sys
+
+import ssdeep
+from symhash import create_sym_fuzzyhash
+
+
+def main():
+    parser = argparse.ArgumentParser(description='SymFuzzy: a program to calculate Fuzzy Hash from symbol table of Mach-O files.')
+    parser.add_argument('-f', '--file', action='store', type=str, help='Specify a Mach-O file to calculate Fuzzy Hash.', required=True)
+    parser.add_argument('-f2', '--file2', action='store', type=str, help='Specify a Mach-O file to be compared with Fuzzy Hash of "--file"')
+    args = parser.parse_args()
+
+    sym_fuzzyhash = create_sym_fuzzyhash(args.file)
+    if not sym_fuzzyhash:
+        return
+
+    if args.file2:
+        sym_fuzzyhash2 = create_sym_fuzzyhash(args.file2)
+        if not sym_fuzzyhash2:
+            return
+
+        for arch, fuzzyhash in sym_fuzzyhash.items():
+            try:
+                fuzzyhash2 = sym_fuzzyhash2.pop(arch)
+                match_value = ssdeep.compare(fuzzyhash, fuzzyhash2)
+                print("Binary architecture: {}".format(arch))
+                print("{}: {}".format(args.file, fuzzyhash))
+                print("{}: {}".format(args.file2, fuzzyhash2))
+                print("Match value: {}".format(match_value))
+                print("-"*50)
+            except KeyError:
+                print("{} does not have an architecture binary for\"{}\"".format(args.file2, arch))
+
+        if len(sym_fuzzyhash2) > 0:
+            for arch in sym_fuzzyhash2.keys():
+                print("{} does not have an architecture binary for\"{}\"".format(args.file, arch))
+
+    else:
+        for arch, fuzzyhash in sym_fuzzyhash.items():
+            print("{}: {}".format(arch, fuzzyhash))
+
+
+if __name__ == "__main__":
+    sys.exit(main())
