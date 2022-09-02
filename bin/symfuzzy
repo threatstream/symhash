@@ -14,21 +14,35 @@ import argparse
 import sys
 
 import ssdeep
-from symhash import create_sym_fuzzyhash
+from symhash import HashMode, create_sym_fuzzyhash
 
 
 def main():
     parser = argparse.ArgumentParser(description='SymFuzzy: a program to calculate Fuzzy Hash from symbol table of Mach-O files.')
-    parser.add_argument('-f', '--file', action='store', type=str, help='Specify a Mach-O file to calculate Fuzzy Hash.', required=True)
-    parser.add_argument('-f2', '--file2', action='store', type=str, help='Specify a Mach-O file to be compared with Fuzzy Hash of "--file"')
+    parser.add_argument('-f', '--file', action='store', type=str,
+                        help='Specify a Mach-O file to calculate Fuzzy Hash.', required=True)
+    parser.add_argument('-f2', '--file2', action='store', type=str,
+                        help='Specify a Mach-O file to be compared with Fuzzy Hash of "--file"')
+    parser.add_argument('-m', '--mode', action='store', type=str, default='ALL',
+                        help='Order of APIs for calculation hash, which can be specified "SYMTAB" or "SORT".')
     args = parser.parse_args()
 
-    sym_fuzzyhash = create_sym_fuzzyhash(args.file)
+    args.mode = args.mode.upper()
+    if args.mode == 'ALL':
+        hash_mode = HashMode.ALL
+    elif args.mode == 'SYMTAB':
+        hash_mode = HashMode.SYMTAB
+    elif args.mode == 'SORT':
+        hash_mode = HashMode.SORT
+    else:
+        sys.exit("Error: Unsupported mode = {}".format(args.mode))
+
+    sym_fuzzyhash = create_sym_fuzzyhash(args.file, hash_mode=hash_mode)
     if not sym_fuzzyhash:
         return
 
     if args.file2:
-        sym_fuzzyhash2 = create_sym_fuzzyhash(args.file2)
+        sym_fuzzyhash2 = create_sym_fuzzyhash(args.file2, hash_mode=hash_mode)
         if not sym_fuzzyhash2:
             return
 

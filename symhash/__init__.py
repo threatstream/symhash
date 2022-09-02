@@ -14,12 +14,19 @@
 
 import os
 import sys
+from enum import Flag, auto
 from hashlib import md5
 
 import magic
 import ssdeep
 
 from symhash.machoinfo import MachOEntity, MachOParser, MachOParserError
+
+
+class HashMode(Flag):
+    SYMTAB = auto()
+    SORT   = auto()
+    ALL    = SYMTAB | SORT
 
 
 def parse_macho(filename=None, data=None):
@@ -84,10 +91,13 @@ def get_import_symbol_list(entity, dylib_list):
                                     sym_list.append("{}.{}".format(dylib_name, sym.get('string', '').decode()))
                                     # print("{}\t{}".format(dylib_name, sym.get('string', '').decode()))
 
+    # print(','.join(sorted(sym_list)).encode())
+    # print("Number of symbols: {}".format(len(sym_list)))
+
     return sym_list
 
 
-def create_sym_hash(filename=None, data=None):
+def create_sym_hash(filename=None, data=None, hash_mode=HashMode.ALL):
     macho_parser = parse_macho(filename, data)
     sym_dict = {}
 
@@ -95,16 +105,23 @@ def create_sym_hash(filename=None, data=None):
         if entity.magic_str != 'Universal':
             dylib_list = get_dylib_list(entity)
             sym_list = get_import_symbol_list(entity, dylib_list)
-            # print(','.join(sorted(sym_list)).encode())
-            # print("Number of symbols: {}".format(len(sym_list)))
-            symhash = md5(','.join(sorted(sym_list)).encode()).hexdigest()
+
             entity_string = "{} {} {}".format(entity.cpu_type_str, entity.filetype_str, entity.magic_str)
-            sym_dict[entity_string] = symhash
+            # Order of APIs in symbol table
+            if hash_mode & HashMode.SYMTAB:
+                symhash = md5(','.join(sym_list).encode()).hexdigest()
+                sym_dict[entity_string] = symhash
+
+            # Sort APIs into alphabetical order
+            if hash_mode & HashMode.SORT:
+                symhash_sorted = md5(','.join(sorted(sym_list)).encode()).hexdigest()
+                entity_string += " (Sorted APIs)"
+                sym_dict[entity_string] = symhash_sorted
 
     return sym_dict
 
 
-def create_sym_fuzzyhash(filename=None, data=None):
+def create_sym_fuzzyhash(filename=None, data=None, hash_mode=HashMode.ALL):
     macho_parser = parse_macho(filename, data)
     sym_fuzzy_dict = {}
 
@@ -112,10 +129,17 @@ def create_sym_fuzzyhash(filename=None, data=None):
         if entity.magic_str != 'Universal':
             dylib_list = get_dylib_list(entity)
             sym_list = get_import_symbol_list(entity, dylib_list)
-            # print(','.join(sorted(sym_list)).encode())
-            # print("Number of symbols: {}".format(len(sym_list)))
-            symfuzzyhash = ssdeep.hash(','.join(sorted(sym_list)).encode())
+
             entity_string = "{} {} {}".format(entity.cpu_type_str, entity.filetype_str, entity.magic_str)
-            sym_fuzzy_dict[entity_string] = symfuzzyhash
+            # Order of APIs in symbol table
+            if hash_mode & HashMode.SYMTAB:
+                symfuzzyhash = ssdeep.hash(','.join(sym_list).encode())
+                sym_fuzzy_dict[entity_string] = symfuzzyhash
+
+            # Sort APIs into alphabetical order
+            if hash_mode & HashMode.SORT:
+                symfuzzyhash_sorted = ssdeep.hash(','.join(sorted(sym_list)).encode())
+                entity_string += " (Sorted APIs)"
+                sym_fuzzy_dict[entity_string] = symfuzzyhash_sorted
 
     return sym_fuzzy_dict
