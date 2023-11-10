@@ -13,9 +13,10 @@
 # creates a list and hashes those
 
 import argparse
+import sys
 
 from future.utils import iteritems
-from symhash import create_sym_hash
+from symhash import HashMode, create_sym_hash
 
 
 def main():
@@ -24,15 +25,28 @@ def main():
     opt.add_argument(
         '-f', '--file', help='The file to create a SymHash from', required=True
     )
+    opt.add_argument('-m', '--mode', action='store', type=str, default='ALL',
+                        help='Order of APIs for calculation hash, which can be specified "SYMTAB" or "SORT".')
     opt.add_argument(
         '-v', '--verbose', help='Verbose output', required=False,
         action='store_true'
     )
 
     options = opt.parse_args()
+
+    options.mode = options.mode.upper()
+    if options.mode == 'ALL':
+        hash_mode = HashMode.ALL
+    elif options.mode == 'SYMTAB':
+        hash_mode = HashMode.SYMTAB
+    elif options.mode == 'SORT':
+        hash_mode = HashMode.SORT
+    else:
+        sys.exit("Error: Unsupported mode = {}".format(options.mode))
+
     f_name = options.file
 
-    s = create_sym_hash(f_name)
+    s = create_sym_hash(f_name, hash_mode=hash_mode)
 
     if not s:
         return

@@ -12,23 +12,35 @@
 # symhash walks the symbol table (read: loaded API calls)
 # creates a list and hashes those
 
-import magic
+import os
+import sys
+from enum import Flag, auto
 from hashlib import md5
+
+import magic
+import ssdeep
 
 from symhash.machoinfo import MachOEntity, MachOParser, MachOParserError
 
 
-def create_sym_hash(filename=None, data=None):
-    # create the sym hash
+class HashMode(Flag):
+    SYMTAB = auto()
+    SORT   = auto()
+    ALL    = SYMTAB | SORT
+
+
+def parse_macho(filename=None, data=None):
     if filename:
-        with open(filename, 'rb') as f:
-            data = f.read()
+        if os.path.isfile(filename):
+            with open(filename, 'rb') as f:
+                data = f.read()
+        else:
+            sys.exit("Error: {} is not a file.".format(filename))
 
     if not data:
         return
 
-    with magic.Magic() as m:
-        filetype = m.id_buffer(data[0:1000])
+    filetype = magic.from_buffer(data[0:1024])
 
     if 'Mach-O' not in filetype:
         print("Data provided is not a valid Mach-O filetype")
@@ -42,26 +54,92 @@ def create_sym_hash(filename=None, data=None):
         print("Error {}".format(e))
         return
 
+    return macho_parser
+
+
+def get_dylib_name_by_ordinal(dylib_list, library_ordinal, basename_only = False):
+    if library_ordinal > 0 and library_ordinal <= 253:
+        if basename_only:
+            return os.path.basename(dylib_list[library_ordinal - 1])
+        else:
+            return dylib_list[library_ordinal - 1]
+    elif library_ordinal in (0, 254, 255):  # 0 = invalid, 254 = DYNAMIC_LOOKUP_ORDINAL, 255 = EXECUTABLE_ORDINAL
+        return None
+
+
+def get_dylib_list(entity):
+    dylib_list = []
+    for cmd in entity.cmdlist:
+        if cmd['cmd'] == MachOEntity.LC_LOAD_DYLIB:
+            dylib_list.append(cmd['dylib'].decode())
+
+    return dylib_list
+
+
+def get_import_symbol_list(entity, dylib_list):
+    sym_list = []
+    for cmd in entity.cmdlist:
+        if cmd['cmd'] == MachOEntity.LC_SYMTAB:
+            for sym in cmd['symbols']:
+                if not sym['is_stab']:
+                    if sym['external'] is True:
+                        if sym['n_type'] == '0x00':  # 0x00 = N_UNDF
+                            library_ordinal = (sym['n_desc'] >> 8) & 0xff
+                            if library_ordinal > 0:
+                                dylib_name = get_dylib_name_by_ordinal(dylib_list, library_ordinal)
+                                if dylib_name:
+                                    sym_list.append("{}.{}".format(dylib_name, sym.get('string', '').decode()))
+                                    # print("{}\t{}".format(dylib_name, sym.get('string', '').decode()))
+
+    # print(','.join(sorted(sym_list)).encode())
+    # print("Number of symbols: {}".format(len(sym_list)))
+
+    return sym_list
+
+
+def create_sym_hash(filename=None, data=None, hash_mode=HashMode.ALL):
+    macho_parser = parse_macho(filename, data)
     sym_dict = {}
 
     for entity in macho_parser.entities:
         if entity.magic_str != 'Universal':
+            dylib_list = get_dylib_list(entity)
+            sym_list = get_import_symbol_list(entity, dylib_list)
 
-            entity_string = "{} {} {}".format(entity.cpu_type_str,
-                                              entity.filetype_str,
-                                              entity.magic_str)
+            entity_string = "{} {} {}".format(entity.cpu_type_str, entity.filetype_str, entity.magic_str)
+            # Order of APIs in symbol table
+            if hash_mode & HashMode.SYMTAB:
+                symhash = md5(','.join(sym_list).encode()).hexdigest()
+                sym_dict[entity_string] = symhash
 
-            sym_list = []
-
-            for cmd in entity.cmdlist:
-                if cmd['cmd'] == MachOEntity.LC_SYMTAB:
-                    for sym in cmd['symbols']:
-                        if not sym['is_stab']:
-                            if sym['external'] is True:
-                                if sym['n_type'] == '0x00':
-                                    sym_list.append(sym.get('string', '').decode())
-
-            symhash = md5(','.join(sorted(sym_list)).encode()).hexdigest()
-            sym_dict[entity_string] = symhash
+            # Sort APIs into alphabetical order
+            if hash_mode & HashMode.SORT:
+                symhash_sorted = md5(','.join(sorted(sym_list)).encode()).hexdigest()
+                entity_string += " (Sorted APIs)"
+                sym_dict[entity_string] = symhash_sorted
 
     return sym_dict
+
+
+def create_sym_fuzzyhash(filename=None, data=None, hash_mode=HashMode.ALL):
+    macho_parser = parse_macho(filename, data)
+    sym_fuzzy_dict = {}
+
+    for entity in macho_parser.entities:
+        if entity.magic_str != 'Universal':
+            dylib_list = get_dylib_list(entity)
+            sym_list = get_import_symbol_list(entity, dylib_list)
+
+            entity_string = "{} {} {}".format(entity.cpu_type_str, entity.filetype_str, entity.magic_str)
+            # Order of APIs in symbol table
+            if hash_mode & HashMode.SYMTAB:
+                symfuzzyhash = ssdeep.hash(','.join(sym_list).encode())
+                sym_fuzzy_dict[entity_string] = symfuzzyhash
+
+            # Sort APIs into alphabetical order
+            if hash_mode & HashMode.SORT:
+                symfuzzyhash_sorted = ssdeep.hash(','.join(sorted(sym_list)).encode())
+                entity_string += " (Sorted APIs)"
+                sym_fuzzy_dict[entity_string] = symfuzzyhash_sorted
+
+    return sym_fuzzy_dict
