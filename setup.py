@@ -17,7 +17,7 @@ setup(
     ],
     install_requires=[
         'filemagic==1.6',
-        'future==0.15.2',
+        'future==0.18.3',
     ],
     description='Anomali Symhash',
     classifiers=[
